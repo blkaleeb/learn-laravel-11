@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-family: "Inter", sans-serif;
+    }
+}
+
+@layer components {
+    .mini-header {
+        @apply text-base font-semibold text-primary md:text-xl lg:text-2xl block;
+    }
+    .hamburger-line {
+        @apply w-[30px] h-[2px] my-2 block bg-[#14b8a6];
+    }
+    .hamburger-active > span:nth-child(1) {
+        @apply rotate-45;
+    }
+}
+
+.navbar-fixed {
+    @apply fixed z-[9999] bg-white bg-opacity-80 backdrop-blur-sm;
+    box-shadow: inset 0 -1px 0 0 rgb(0, 0, 0, 0.2);
+}
+
+.hamburger-active > span:nth-child(1) {
+    @apply rotate-45;
+}
+
+.hamburger-active > span:nth-child(3) {
+    @apply -rotate-45;
+}
+
+.hamburger-active > span:nth-child(2) {
+    @apply scale-0;
+}
