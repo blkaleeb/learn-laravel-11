@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TransactionResource\Pages;
 use App\Filament\Resources\TransactionResource\RelationManagers;
+use App\Models\Customer;
 use App\Models\Package;
 use App\Models\Transaction;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
@@ -15,10 +17,12 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
@@ -28,6 +32,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Number;
+use Illuminate\Validation\Rule;
 
 class TransactionResource extends Resource
 {
@@ -48,7 +53,33 @@ class TransactionResource extends Resource
               ->relationship('customer', 'name')
               ->searchable()
               ->preload()
-              ->required(),
+              ->required()
+              ->suffixAction(
+                Action::make('newCustomer')
+                  ->label('New Customer')
+                  ->icon('heroicon-m-user-plus')
+                  ->form([
+                    Forms\Components\TextInput::make('name')
+                      ->required(),
+                    Forms\Components\TextInput::make('email')
+                      ->label('Email Adress')
+                      ->maxlength(255)
+                      ->unique(ignoreRecord: true)
+                      ->required(),
+                    Forms\Components\TextInput::make('phone')
+                      ->tel()
+                      ->unique(ignoreRecord: true)
+                      ->required()
+                  ])
+                  ->action(function (array $data) {
+                    Customer::create($data);
+                    Notification::make()
+                      ->title('Customer Created')
+                      ->body('The new customer has been successfully added.')
+                      ->success()
+                      ->send();
+                  })
+              ),
 
             Select::make('payment_method')
               ->options([
@@ -113,10 +144,11 @@ class TransactionResource extends Resource
                   TextInput::make('quantity')
                     ->numeric()
                     ->required()
+                    ->step(0.5)
+                    ->minValue(fn($get) => Package::find($get('package_id'))?->minimum_weight ?? 0)
                     ->default(0)
                     ->columnSpan(2)
                     ->reactive()
-
                     ->afterStateUpdated(fn($state, Set $set, Get $get) => $set('total_amount', $state * $get('unit_amount'))),
                   TextInput::make('unit_amount')
                     ->numeric()
@@ -131,6 +163,24 @@ class TransactionResource extends Resource
                     ->columnSpan(3),
                 ])->columns(12),
 
+
+              Toggle::make('delivery')
+                ->onIcon('heroicon-m-truck')
+                ->offIcon('heroicon-m-truck')
+                ->reactive()
+                ->afterStateUpdated(function ($state, callable $set) {
+                  if (!$state) {
+                    $set('shipping_amount', 0);
+                  }
+                }),
+
+              TextInput::make('shipping_amount')
+                ->numeric()
+                ->reactive()
+                ->dehydrated()
+                ->live(debounce: 1000)
+                ->visible(fn($get) => $get('delivery')),
+
               Placeholder::make('grand_total_placeholder')
                 ->label('Grand Total')
                 ->content(function (Get $get, Set $set) {
@@ -141,6 +191,8 @@ class TransactionResource extends Resource
                   foreach ($repeaters as $key => $repeater) {
                     $total += $get("transactiondetails.{$key}.total_amount");
                   }
+
+                  $total += $get("shipping_amount");
                   $set('total', $total);
                   return Number::currency($total, 'IDR');
                 }),
