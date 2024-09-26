@@ -136,7 +136,10 @@ class TransactionResource extends Resource
                     ->required()
                     ->distinct()
                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                    ->columnSpan(4)
+                    ->columnSpan([
+                      'sm' => 12,
+                      'md' => 4
+                    ])
                     ->reactive()
                     ->afterStateUpdated(fn($state, Set $set) => $set('quantity', Package::find($state)?->minimum_weight ?? 0))
                     ->afterStateUpdated(fn($state, Set $set) => $set('unit_amount', Package::find($state)?->price ?? 0))
@@ -147,7 +150,10 @@ class TransactionResource extends Resource
                     ->step(0.5)
                     ->minValue(fn($get) => Package::find($get('package_id'))?->minimum_weight ?? 0)
                     ->default(0)
-                    ->columnSpan(2)
+                    ->columnSpan([
+                      'sm' => 12,
+                      'md' => 2
+                    ])
                     ->reactive()
                     ->afterStateUpdated(fn($state, Set $set, Get $get) => $set('total_amount', $state * $get('unit_amount'))),
                   TextInput::make('unit_amount')
@@ -155,31 +161,25 @@ class TransactionResource extends Resource
                     ->required()
                     ->disabled()
                     ->dehydrated()
-                    ->columnSpan(3),
+                    ->columnSpan([
+                      'sm' => 12,
+                      'md' => 3
+                    ]),
                   TextInput::make('total_amount')
                     ->numeric()
                     ->required()
                     ->dehydrated()
-                    ->columnSpan(3),
+                    ->columnSpan([
+                      'sm' => 12,
+                      'md' => 3
+                    ]),
                 ])->columns(12),
-
-
-              Toggle::make('delivery')
-                ->onIcon('heroicon-m-truck')
-                ->offIcon('heroicon-m-truck')
-                ->reactive()
-                ->afterStateUpdated(function ($state, callable $set) {
-                  if (!$state) {
-                    $set('shipping_amount', 0);
-                  }
-                }),
 
               TextInput::make('shipping_amount')
                 ->numeric()
-                ->reactive()
-                ->dehydrated()
-                ->live(debounce: 1000)
-                ->visible(fn($get) => $get('delivery')),
+                ->default(0)
+                ->required()
+                ->columnSpan(1),
 
               Placeholder::make('grand_total_placeholder')
                 ->label('Grand Total')
