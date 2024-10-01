@@ -62,10 +62,9 @@ class TransactionResource extends Resource
                     Forms\Components\TextInput::make('name')
                       ->required(),
                     Forms\Components\TextInput::make('email')
-                      ->label('Email Adress')
+                      ->label('Email Address')
                       ->maxlength(255)
-                      ->unique(ignoreRecord: true)
-                      ->required(),
+                      ->unique(ignoreRecord: true),
                     Forms\Components\TextInput::make('phone')
                       ->tel()
                       ->unique(ignoreRecord: true)
