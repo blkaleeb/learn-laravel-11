@@ -22,7 +22,7 @@ class ListTransactions extends ListRecords
   protected function getHeaderWidgets(): array
   {
     return [
-      TransactionStats::class
+      // TransactionStats::class
     ];
   }
 
